@@ -1,0 +1,21 @@
+/*
+
+
+    Root element of the document (<html>).
+    Element with a position value absolute or relative and z-index value other than auto.
+    Element with a position value fixed or sticky (sticky for all mobile browsers, but not older desktop).
+    Element that is a child of a flex container, with z-index value other than auto.
+    Element that is a child of a grid container, with z-index value other than auto.
+    Element with a opacity value less than 1 (See the specification for opacity).
+    Element with a mix-blend-mode value other than normal.
+    Element with any of the following properties with value other than none:
+        transform
+        filter
+        perspective
+        clip-path
+        mask / mask-image / mask-border
+    Element with a isolation value isolate.
+    Element with a -webkit-overflow-scrolling value touch.
+    Element with a will-change value specifying any property that would create a stacking context on non-initial value (see this post).
+    Element with a contain value of layout, or paint, or a composite value that includes either of them (i.e. contain: strict, contain: content).
+*/
