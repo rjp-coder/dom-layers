@@ -1,6 +1,6 @@
 function isRoot(e){
     // Root element of the document (<html>).
-    return e.tagName.toLowerCase()=="html";
+    return e.tagName && e.tagName.toLowerCase()=="html";
 
 }
 
@@ -91,30 +91,73 @@ function hasContainValue(e){
     e.style.contain == "content");
 }
 
-function isAStackContextCreator(elem,getAllReasons=true){
+function isAStackContextCreator(input,getAllReasons=true){
     let funcs = [isRoot,fs,ra,isChildOfFlexContainer,isChildOfGridContainer,isTranslucent,
         hasMixBlendMode,hasSpecialProperty,hasIsolationValue,hasTouchScrolling,
         willChangeToCreateStackingContext,hasContainValue];
     let isAStackContextCreator = false;
-    let reasons = "";
+    let reasons = [];
     for (let f of funcs){
-        if (f(elem)){
+        if (f(input)){
             isAStackContextCreator = true;
-            reasons+=f.name;
+            reasons.push(f.name);
             if (!getAllReasons){
                 break;
             }
         }
     }
-    return {elem,isAStackContextCreator,reasons};
+    return {input,isAStackContextCreator,reasons:reasons.join(",")};
+}
+
+function renameProperty(o,old_key,new_key){
+        Object.defineProperty(o, new_key,
+            Object.getOwnPropertyDescriptor(o, old_key));
+        delete o[old_key];
 }
 
 allElems = [...document.body.querySelectorAll("*")];
 scCreatorsIncludingSvg = allElems.map(e=>isAStackContextCreator(e)).filter(e=>e.isAStackContextCreator);
 scCreators = scCreatorsIncludingSvg.filter(e=>!
-    ["svg","path","g","defs","polygon","rect"].includes(e.elem.tagName.toLowerCase()));
+    ["svg","path","g","defs","polygon","rect"].includes(e.input.tagName.toLowerCase()));
+for (let s of scCreators){
+    renameProperty(s,"input","elem");
+}
 
 
+
+
+cssRules = [];
+for (let ss of document.styleSheets){
+    r = [];
+    try {
+        r=ss.cssRules;
+    } catch (e){
+        console.warn(e);
+    }
+    cssRules = [...cssRules,...r];
+}
+rulesWithNoStyle = cssRules.filter(c=>!c.style);
+if (rulesWithNoStyle.length){
+    console.warn("There were " + rulesWithNoStyle.length + " css rules" +
+    " found which have no style associated with them. These are not analysed" +
+    " by dom layers");
+}
+
+relevantRules = cssRules.filter(c=>c.style).map(c=>
+    isAStackContextCreator(c)).filter(c=>c.isAStackContextCreator);
+
+scCreatorsViaCss = [];
+
+for (let r of relevantRules){
+    let rule  = r.input;
+    let matches = [...document.querySelectorAll(rule.selectorText)];
+    
+    scCreatorsFromRule = []
+    for (let m of matches){
+        scCreatorsFromRule.push({elem:m,reasons:r.reasons,isAStackContextCreator:r.isAStackContextCreator})
+    }
+    scCreatorsViaCss = [...scCreatorsViaCss,...scCreatorsFromRule];
+}
 
 
 
